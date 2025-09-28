@@ -1,7 +1,13 @@
 streamlit>=1.32.0
-# ollama-sdk  # Commented out due to possible incompatibility with Python 3.12.1
 chromadb>=0.4.22
 numpy>=1.26.0
 pandas>=2.2.0
 scikit-learn>=1.4.0
 requests>=2.31.0
+sentence-transformers>=2.2.2
+python-dotenv>=1.0.0
+torch>=2.0.0
+transformers>=4.30.0
+ollama>=0.1.0
+PyPDF2>=3.0.0
+python-magic>=0.4.27

@@ -28,10 +28,10 @@ rag-chatbot
    cd rag-chatbot
    ```
 
-2. **Create a virtual environment** (optional but recommended):
+2. **Create a virtual environment** (recommended):
    ```bash
    python3 -m venv venv
-   source venv/bin/activate
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
 3. **Install the required dependencies**:
@@ -39,13 +39,29 @@ rag-chatbot
    pip install -r requirements.txt
    ```
 
-4. **Configure environment variables**:
-   Create a `.env` file in the root directory and add your API keys and configuration settings.
+4. **Install and setup Ollama**:
+   - Download and install Ollama from [https://ollama.ai](https://ollama.ai)
+   - Pull a model (e.g., `ollama pull llama2`)
+   - Start the Ollama server: `ollama serve`
+   - The Python `ollama` library will be installed automatically with the requirements
 
-5. **Run the application**:
+5. **Configure environment variables**:
+   ```bash
+   cp env.example .env
+   ```
+   Edit `.env` file with your preferred settings.
+
+6. **Run the application**:
    ```bash
    streamlit run src/app.py
    ```
+
+## Prerequisites
+
+- Python 3.8 or higher
+- Ollama installed and running
+- At least 4GB RAM (8GB recommended for larger models)
+- Internet connection for downloading embedding models
 
 ## Features
 

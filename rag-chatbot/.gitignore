@@ -25,3 +25,7 @@ Thumbs.db
 
 # Streamlit cache
 .streamlit/
+
+
+**/chroma.sqlite3
+**/chroma_db/
