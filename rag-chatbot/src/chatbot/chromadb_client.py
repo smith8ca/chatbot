@@ -1,3 +1,26 @@
+"""
+chromadb_client.py
+------------------
+
+This module provides the ChromaDBClient class, which manages interactions with a ChromaDB vector database for document storage, retrieval, and search in a Retrieval-Augmented Generation (RAG) chatbot system.
+
+Features:
+- Stores text documents and their embeddings in ChromaDB.
+- Retrieves similar documents based on semantic similarity using embeddings.
+- Supports metadata-based search and document deletion.
+- Provides collection info and allows clearing the collection.
+
+Dependencies:
+- chromadb: Persistent vector database for document storage and retrieval.
+- sentence_transformers: Used for generating text embeddings.
+
+Typical usage:
+    db_client = ChromaDBClient()
+    doc_id = db_client.store_vector("Some text")
+    results = db_client.retrieve_vector("Query text")
+    info = db_client.get_collection_info()
+"""
+
 import hashlib
 import logging
 import uuid
@@ -40,6 +63,7 @@ class ChromaDBClient:
 
         except Exception as e:
             logger.error(f"Failed to initialize ChromaDB client: {e}")
+
             raise RuntimeError(f"Failed to initialize ChromaDB: {e}")
 
     def _generate_embedding(self, text: str) -> List[float]:
@@ -56,7 +80,20 @@ class ChromaDBClient:
         return hashlib.md5(text.encode()).hexdigest()
 
     def store_vector(self, text: str, metadata: Optional[Dict[str, Any]] = None) -> str:
-        """Store text and its embedding in ChromaDB."""
+        """
+        Stores a text document and its embedding vector in the ChromaDB collection.
+
+        Args:
+            text (str): The text content to be embedded and stored.
+            metadata (Optional[Dict[str, Any]], optional): Additional metadata to associate with the document. Defaults to None.
+
+        Returns:
+            str: The unique document ID assigned to the stored document.
+
+        Raises:
+            ValueError: If the provided text is empty or only whitespace.
+            RuntimeError: If any error occurs during the storage process.
+        """
         try:
             if not text or not text.strip():
                 raise ValueError("Text cannot be empty")
@@ -89,7 +126,24 @@ class ChromaDBClient:
             raise RuntimeError(f"Failed to store document: {e}")
 
     def retrieve_vector(self, query_text: str, top_k: int = 5) -> List[Dict[str, Any]]:
-        """Retrieve similar documents based on query text."""
+        """
+        Retrieves the top-k most similar documents from the ChromaDB collection based on the provided query text.
+
+        Args:
+            query_text (str): The input text to query for similar documents.
+            top_k (int, optional): The number of top similar documents to retrieve. Defaults to 5.
+
+        Returns:
+            List[Dict[str, Any]]: A list of dictionaries, each containing:
+                - 'document': The retrieved document text.
+                - 'metadata': Associated metadata for the document.
+                - 'distance': The distance metric between the query and the document embedding.
+                - 'similarity': The similarity score (1 - distance) between the query and the document embedding.
+
+        Raises:
+            ValueError: If the query text is empty or only whitespace.
+            RuntimeError: If an error occurs during retrieval from the database.
+        """
         try:
             if not query_text or not query_text.strip():
                 raise ValueError("Query text cannot be empty")
@@ -137,7 +191,13 @@ class ChromaDBClient:
             raise RuntimeError(f"Failed to retrieve documents: {e}")
 
     def get_collection_info(self) -> Dict[str, Any]:
-        """Get information about the collection."""
+        """
+        Retrieves information about the current collection.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the collection name, document count,
+            and persist directory. If an error occurs, returns a dictionary with an 'error' key.
+        """
         try:
             count = self.collection.count()
             return {
@@ -150,7 +210,19 @@ class ChromaDBClient:
             return {"error": str(e)}
 
     def delete_document(self, doc_id: str) -> bool:
-        """Delete a document by its ID."""
+        """
+        Deletes a document from the collection by its ID.
+
+        Args:
+            doc_id (str): The unique identifier of the document to delete.
+
+        Returns:
+            bool: True if the document was successfully deleted, False otherwise.
+
+        Logs:
+            - Info message on successful deletion.
+            - Error message if deletion fails.
+        """
         try:
             self.collection.delete(ids=[doc_id])
             logger.info(f"Successfully deleted document with ID: {doc_id}")
@@ -160,7 +232,16 @@ class ChromaDBClient:
             return False
 
     def clear_collection(self) -> bool:
-        """Clear all documents from the collection."""
+        """
+        Clears the current collection in the ChromaDB client by deleting and recreating it.
+
+        Returns:
+            bool: True if the collection was successfully cleared and recreated, False otherwise.
+
+        Logs:
+            - Info message on successful clearing.
+            - Error message if an exception occurs.
+        """
         try:
             self.client.delete_collection(self.collection_name)
             self.collection = self.client.create_collection(

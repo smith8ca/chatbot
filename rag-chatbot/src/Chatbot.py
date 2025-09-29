@@ -161,7 +161,6 @@ def main():
 
         # Sidebar for document upload and analytics
         with st.sidebar:
-            st.title("Pages")
             st.header("Document Management")
 
             # Initialize document processor
@@ -206,11 +205,11 @@ def main():
                             "Make sure the file is not corrupted and is in a supported format."
                         )
 
-            st.divider()
-            st.caption("Looking for analytics and exports?")
-            st.info(
-                "Open the Feedback page from the sidebar navigation to view analytics and manage feedback data."
-            )
+            # st.divider()
+            # st.caption("Looking for analytics and exports?")
+            # st.info(
+            #     "Open the Feedback page from the sidebar navigation to view analytics and manage feedback data."
+            # )
 
     except Exception as e:
         st.error(f"Failed to initialize chatbot: {str(e)}")

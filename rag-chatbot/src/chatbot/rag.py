@@ -1,3 +1,26 @@
+"""
+rag.py
+-------
+
+This module implements the RAGChatbot class, which provides a Retrieval-Augmented Generation (RAG) chatbot using an Ollama language model and a ChromaDB vector database.
+
+Features:
+- Processes user queries by retrieving relevant documents from a vector database and generating responses using a language model.
+- Stores new information in the knowledge base for future retrieval.
+- Prepares context from retrieved documents to enhance response quality.
+- Provides methods to get knowledge base info, clear the knowledge base, and search documents directly.
+
+Dependencies:
+- ollama_client: Interface to the Ollama language model for response generation.
+- chromadb_client: Interface to ChromaDB for vector-based document retrieval and storage.
+
+Typical usage:
+    chatbot = RAGChatbot(ollama_client, chromadb_client)
+    response = chatbot.process_query("What is RAG?")
+    chatbot.store_information("RAG stands for Retrieval-Augmented Generation.")
+"""
+
+
 import logging
 import re
 from typing import Any, Dict, List, Optional

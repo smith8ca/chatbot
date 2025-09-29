@@ -23,32 +23,38 @@ rag-chatbot
 ## Setup Instructions
 
 1. **Clone the repository**:
+
    ```bash
    git clone <repository-url>
    cd rag-chatbot
    ```
 
 2. **Create a virtual environment** (recommended):
+
    ```bash
    python3 -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
 3. **Install the required dependencies**:
+
    ```bash
    pip install -r requirements.txt
    ```
 
 4. **Install and setup Ollama**:
+
    - Download and install Ollama from [https://ollama.ai](https://ollama.ai)
    - Pull a model (e.g., `ollama pull llama2`)
    - Start the Ollama server: `ollama serve`
    - The Python `ollama` library will be installed automatically with the requirements
 
 5. **Configure environment variables**:
+
    ```bash
    cp env.example .env
    ```
+
    Edit `.env` file with your preferred settings.
 
 6. **Run the application**:

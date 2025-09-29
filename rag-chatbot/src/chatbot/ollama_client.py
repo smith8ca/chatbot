@@ -16,9 +16,10 @@ Author: Charles A. Smith
 Version: 1.0.0
 """
 
-import ollama
-from typing import Optional, Dict, Any, List
 import logging
+from typing import Any, Dict, List, Optional
+
+import ollama
 
 logger = logging.getLogger(__name__)
 
