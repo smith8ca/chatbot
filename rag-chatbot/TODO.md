@@ -10,7 +10,7 @@ A living list of improvements, experiments, and future work for the RAG Chatbot.
 - [ ] Conversation management: rename, pin, archive, delete threads
 - [ ] Message actions: copy, regenerate, improve with hint
 - [ ] Persona switching and persona management
-- [ ] Sidebar page to list knowledge base files (uploaded/ingested)
+- [x] Sidebar page to list knowledge base files (uploaded/ingested)
 
 ## Feedback & Analytics
 

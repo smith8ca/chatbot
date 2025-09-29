@@ -45,16 +45,26 @@ class FeedbackManager:
         """
         # Determine backend and paths
         backend_env = os.getenv("FEEDBACK_BACKEND", "sqlite").strip().lower()
-        self.backend = (storage_backend or backend_env) if backend_env in {"sqlite", "json"} else "sqlite"
+        self.backend = (
+            (storage_backend or backend_env)
+            if backend_env in {"sqlite", "json"}
+            else "sqlite"
+        )
 
-        self.db_path = Path(db_path or os.getenv("FEEDBACK_DB_PATH", "feedback_data.sqlite3"))
-        self.json_path = Path(json_path or os.getenv("FEEDBACK_JSON_PATH", "feedback_data.json"))
+        self.db_path = Path(
+            db_path or os.getenv("FEEDBACK_DB_PATH", "feedback_data.sqlite3")
+        )
+        self.json_path = Path(
+            json_path or os.getenv("FEEDBACK_JSON_PATH", "feedback_data.json")
+        )
 
         if self.backend == "sqlite":
             self._ensure_database()
             # Migrate any legacy JSON if present and table empty
             self._maybe_migrate_from_json()
-            logger.info(f"FeedbackManager initialized with SQLite database: {self.db_path}")
+            logger.info(
+                f"FeedbackManager initialized with SQLite database: {self.db_path}"
+            )
         else:
             # Ensure JSON file exists
             if not self.json_path.exists():
@@ -125,14 +135,24 @@ class FeedbackManager:
                             entry.get("user_query", ""),
                             entry.get("response", ""),
                             entry.get("feedback"),
-                            int(entry.get("response_length", len(entry.get("response", "")))),
-                            int(entry.get("query_length", len(entry.get("user_query", "")))),
+                            int(
+                                entry.get(
+                                    "response_length", len(entry.get("response", ""))
+                                )
+                            ),
+                            int(
+                                entry.get(
+                                    "query_length", len(entry.get("user_query", ""))
+                                )
+                            ),
                         )
                         for entry in data
                     ],
                 )
 
-            logger.info(f"Migrated {len(data)} legacy feedback entries from JSON to SQLite")
+            logger.info(
+                f"Migrated {len(data)} legacy feedback entries from JSON to SQLite"
+            )
         except Exception as e:
             logger.error(f"Error migrating from JSON: {e}")
 
@@ -209,9 +229,7 @@ class FeedbackManager:
         try:
             if self.backend == "sqlite":
                 with self._connect() as conn:
-                    cur = conn.execute(
-                        "SELECT COUNT(1) AS total FROM feedback"
-                    )
+                    cur = conn.execute("SELECT COUNT(1) AS total FROM feedback")
                     total = cur.fetchone()["total"]
 
                     if total == 0:
@@ -247,8 +265,12 @@ class FeedbackManager:
                         "positive_feedback": int(pos),
                         "negative_feedback": int(neg),
                         "satisfaction_rate": round(float(satisfaction_rate), 1),
-                        "average_response_length": round(float(avg_resp), 1) if avg_resp is not None else 0,
-                        "average_query_length": round(float(avg_query), 1) if avg_query is not None else 0,
+                        "average_response_length": (
+                            round(float(avg_resp), 1) if avg_resp is not None else 0
+                        ),
+                        "average_query_length": (
+                            round(float(avg_query), 1) if avg_query is not None else 0
+                        ),
                     }
             else:
                 data = self._json_load()
@@ -265,7 +287,9 @@ class FeedbackManager:
                 total = len(data)
                 pos = len([f for f in data if f.get("feedback") == "positive"])
                 neg = len([f for f in data if f.get("feedback") == "negative"])
-                satisfaction_rate = (pos / (pos + neg) * 100) if (pos + neg) > 0 else 0.0
+                satisfaction_rate = (
+                    (pos / (pos + neg) * 100) if (pos + neg) > 0 else 0.0
+                )
                 avg_resp = sum(f.get("response_length", 0) for f in data) / total
                 avg_query = sum(f.get("query_length", 0) for f in data) / total
                 return {
@@ -348,9 +372,7 @@ class FeedbackManager:
             with open(export_path, "w", encoding="utf-8") as f:
                 json.dump(export_data, f, indent=2, ensure_ascii=False)
 
-            logger.info(
-                f"Exported {len(data)} feedback entries to {export_path}"
-            )
+            logger.info(f"Exported {len(data)} feedback entries to {export_path}")
             return True
         except Exception as e:
             logger.error(f"Error exporting feedback: {e}")
@@ -394,7 +416,9 @@ class FeedbackManager:
         except Exception as e:
             logger.error(f"Error writing JSON feedback: {e}")
 
-    def compute_session_feedback(self, messages: List[Dict[str, Any]], recent_limit: int = 5) -> Dict[str, Any]:
+    def compute_session_feedback(
+        self, messages: List[Dict[str, Any]], recent_limit: int = 5
+    ) -> Dict[str, Any]:
         """
         Compute feedback analytics from the current in-memory chat session messages.
 

@@ -101,14 +101,53 @@ class ChromaDBClient:
             # Generate embedding
             embedding = self._generate_embedding(text)
 
-            # Generate unique ID
+            # Generate unique ID (by content, used to detect exact duplicates across filenames too)
             doc_id = self._generate_document_id(text)
 
             # Prepare metadata
             if metadata is None:
                 metadata = {}
 
-            metadata.update({"text_length": len(text), "stored_at": str(uuid.uuid4())})
+            filename = metadata.get("filename")
+            content_hash = doc_id
+
+            # Dedup/versioning: if a file with the same filename has identical content_hash, skip storing
+            existing_same_file = []
+            if filename:
+                try:
+                    existing_same_file = self.search_by_metadata(
+                        {"filename": filename}, top_k=1000
+                    )
+                except Exception:
+                    existing_same_file = []
+
+            for item in existing_same_file:
+                meta = item.get("metadata", {})
+                if meta.get("content_hash") == content_hash:
+                    logger.info(
+                        f"Duplicate content detected for filename '{filename}'. Skipping store."
+                    )
+                    return meta.get("id", doc_id)
+
+            # Determine next version if same filename exists with different content
+            next_version = 1
+            if filename and existing_same_file:
+                versions = []
+                for item in existing_same_file:
+                    v = item.get("metadata", {}).get("version")
+                    if isinstance(v, int):
+                        versions.append(v)
+                if versions:
+                    next_version = max(versions) + 1
+
+            metadata.update(
+                {
+                    "text_length": len(text),
+                    "stored_at": str(uuid.uuid4()),
+                    "content_hash": content_hash,
+                    "version": next_version,
+                }
+            )
 
             # Store in ChromaDB
             self.collection.add(
@@ -289,3 +328,77 @@ class ChromaDBClient:
         except Exception as e:
             logger.error(f"Error searching by metadata: {e}")
             raise RuntimeError(f"Failed to search by metadata: {e}")
+
+    def list_documents(self, limit: int = 100, offset: int = 0) -> List[Dict[str, Any]]:
+        """List stored documents with their metadata.
+
+        Args:
+            limit: Max number of documents to return
+            offset: Number of documents to skip (for pagination)
+
+        Returns:
+            List of dicts with keys: id, metadata, and document (may be large)
+        """
+        try:
+            # Chroma doesn't have offset/limit on collections directly, so we fetch all ids
+            # and slice locally. This is acceptable for small to moderate collections.
+            count = self.collection.count()
+            if count == 0:
+                return []
+
+            # We will query by using the entire collection with include fields
+            # Note: Some Chroma versions support get with where={}, but we'll use query with dummy embedding.
+            # Generate a zero embedding of correct dimension by encoding an empty string
+            dummy_embedding = self._generate_embedding("")
+            results = self.collection.query(
+                query_embeddings=[dummy_embedding],
+                n_results=min(limit + offset, count),
+                include=["documents", "metadatas", "distances"],
+            )
+
+            items: List[Dict[str, Any]] = []
+            docs = results.get("documents", [[]])[0]
+            metas = results.get("metadatas", [[]])[0]
+            ids = (
+                results.get("ids", [[]])[0] if "ids" in results else [None] * len(docs)
+            )
+
+            # Slice after retrieval to simulate offset
+            sliced = list(zip(ids, docs, metas))[offset : offset + limit]
+            for doc_id, doc, meta in sliced:
+                items.append({"id": doc_id, "document": doc, "metadata": meta or {}})
+            return items
+        except Exception as e:
+            logger.error(f"Error listing documents: {e}")
+            return []
+
+    def get_by_filename(self, filename: str, top_k: int = 1000) -> List[Dict[str, Any]]:
+        """Return documents whose metadata filename matches the provided name."""
+        if not filename:
+            return []
+        try:
+            return self.search_by_metadata({"filename": filename}, top_k=top_k)
+        except Exception as e:
+            logger.error(f"Error fetching by filename '{filename}': {e}")
+            return []
+
+    def delete_by_filename(self, filename: str) -> int:
+        """Delete all documents whose metadata filename matches the provided name.
+
+        Returns number of attempted deletions.
+        """
+        try:
+            items = self.get_by_filename(filename, top_k=10000)
+            # We don't have ids in the search results directly; try to re-query by content hash if present
+            # As a fallback, we can clear collection and re-add, but we avoid that. We'll attempt delete by where.
+            # Some Chroma versions support where clause in delete; we'll try that first.
+            try:
+                self.collection.delete(where={"filename": filename})
+                return len(items)
+            except Exception:
+                # Fallback: no-op if delete by where not supported
+                logger.warning("delete(where=...) not supported by this Chroma version")
+                return 0
+        except Exception as e:
+            logger.error(f"Error deleting by filename '{filename}': {e}")
+            return 0

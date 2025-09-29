@@ -20,7 +20,6 @@ Typical usage:
     chatbot.store_information("RAG stands for Retrieval-Augmented Generation.")
 """
 
-
 import logging
 import re
 from typing import Any, Dict, List, Optional
